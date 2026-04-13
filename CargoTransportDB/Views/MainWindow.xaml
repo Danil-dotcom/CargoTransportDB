@@ -1,0 +1,176 @@
+﻿<Window x:Class="CargoTransportation.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Система управления грузоперевозками" Height="650" Width="1100"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#2C3E50" Padding="10">
+            <Grid>
+                <TextBlock Text="🚚 Система управления грузоперевозками" 
+                          FontSize="18" FontWeight="Bold" Foreground="White"
+                          VerticalAlignment="Center"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <TextBlock x:Name="WelcomeText" Foreground="White" 
+                              VerticalAlignment="Center" Margin="10" FontSize="14"/>
+                    <Button x:Name="LogoutButton" Content="Выйти" Click="LogoutButton_Click" 
+                           Background="#E74C3C" Foreground="White" Width="80" Height="30"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Content -->
+        <TabControl Grid.Row="1" Margin="10">
+            <TabItem Header="📋 Заказы" FontSize="13">
+                <Grid Margin="5">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Filter Panel -->
+                    <Border Grid.Row="0" Background="#ECF0F1" Padding="10" Margin="0,0,0,10" CornerRadius="5">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <StackPanel Margin="5">
+                                <TextBlock Text="Дата от:" FontSize="11" Margin="0,0,0,3"/>
+                                <DatePicker x:Name="FromDatePicker" Width="120"/>
+                            </StackPanel>
+                            <StackPanel Margin="5">
+                                <TextBlock Text="Дата до:" FontSize="11" Margin="0,0,0,3"/>
+                                <DatePicker x:Name="ToDatePicker" Width="120"/>
+                            </StackPanel>
+                            <StackPanel Margin="5">
+                                <TextBlock Text="Статус:" FontSize="11" Margin="0,0,0,3"/>
+                                <ComboBox x:Name="StatusFilterCombo" Width="150" 
+                                         DisplayMemberPath="StatusName" SelectedValuePath="StatusID"/>
+                            </StackPanel>
+                            <StackPanel Margin="5">
+                                <TextBlock Text="Поиск:" FontSize="11" Margin="0,0,0,3"/>
+                                <TextBox x:Name="SearchTextBox" Width="200"/>
+                            </StackPanel>
+                            <Button x:Name="FilterButton" Content="🔍 Фильтровать" Click="FilterButton_Click" 
+                                   Margin="5,20,5,0" Background="#3498DB" Foreground="White" Width="110" Height="30"/>
+                            <Button x:Name="ResetFilterButton" Content="🔄 Сбросить" Click="ResetFilterButton_Click" 
+                                   Margin="5,20,5,0" Width="100" Height="30"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Orders DataGrid -->
+                    <DataGrid x:Name="OrdersDataGrid" Grid.Row="1" AutoGenerateColumns="False" 
+                             SelectionChanged="OrdersDataGrid_SelectionChanged"
+                             IsReadOnly="True" AlternatingRowBackground="#F5F5F5"
+                             FontSize="12">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="№ заказа" Binding="{Binding OrderNumber}" Width="100"/>
+                            <DataGridTextColumn Header="Клиент" Binding="{Binding Client.CompanyName, FallbackValue='-'}" Width="130"/>
+                            <DataGridTextColumn Header="Водитель" Binding="{Binding Driver.FullName, FallbackValue='-'}" Width="130"/>
+                            <DataGridTextColumn Header="ТС" Binding="{Binding Vehicle.PlateNumber, FallbackValue='-'}" Width="100"/>
+                            <DataGridTextColumn Header="Адрес погрузки" Binding="{Binding PickupAddress}" Width="160"/>
+                            <DataGridTextColumn Header="Адрес доставки" Binding="{Binding DeliveryAddress}" Width="160"/>
+                            <DataGridTextColumn Header="Цена" Binding="{Binding Price, StringFormat=' {0:C}'}" Width="90"/>
+                            <DataGridTextColumn Header="Статус" Binding="{Binding Status.StatusName, FallbackValue='-'}" Width="100"/>
+                            <DataGridTextColumn Header="Дата" Binding="{Binding OrderDate, StringFormat='dd.MM.yyyy'}" Width="100"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="✏️ Управление заказами" FontSize="13">
+                <Grid Margin="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Add/Edit Form -->
+                    <Border Grid.Column="0" BorderBrush="#BDC3C7" BorderThickness="1" CornerRadius="5" Padding="15">
+                        <StackPanel>
+                            <TextBlock Text="📝 Добавить/Редактировать заказ" FontSize="16" FontWeight="Bold" 
+                                      Margin="0,0,0,15" Foreground="#2C3E50" HorizontalAlignment="Center"/>
+
+                            <TextBlock Text="Клиент:" Margin="0,5,0,0" FontWeight="SemiBold"/>
+                            <ComboBox x:Name="ClientCombo" DisplayMemberPath="CompanyName" 
+                                     SelectedValuePath="ClientID" Margin="0,2,0,5" Height="30"/>
+
+                            <TextBlock Text="Водитель:" Margin="0,5,0,0" FontWeight="SemiBold"/>
+                            <ComboBox x:Name="DriverCombo" DisplayMemberPath="FullName" 
+                                     SelectedValuePath="DriverID" Margin="0,2,0,5" Height="30"/>
+
+                            <TextBlock Text="Транспортное средство:" Margin="0,5,0,0" FontWeight="SemiBold"/>
+                            <ComboBox x:Name="VehicleCombo" DisplayMemberPath="PlateNumber" 
+                                     SelectedValuePath="VehicleID" Margin="0,2,0,5" Height="30"/>
+
+                            <TextBlock Text="Груз:" Margin="0,5,0,0" FontWeight="SemiBold"/>
+                            <ComboBox x:Name="CargoCombo" DisplayMemberPath="Name" 
+                                     SelectedValuePath="CargoID" Margin="0,2,0,5" Height="30"/>
+
+                            <TextBlock Text="Адрес погрузки:" Margin="0,5,0,0" FontWeight="SemiBold"/>
+                            <TextBox x:Name="PickupAddressTextBox" Margin="0,2,0,5" Height="30"/>
+
+                            <TextBlock Text="Адрес доставки:" Margin="0,5,0,0" FontWeight="SemiBold"/>
+                            <TextBox x:Name="DeliveryAddressTextBox" Margin="0,2,0,5" Height="30"/>
+
+                            <TextBlock Text="Цена (руб):" Margin="0,5,0,0" FontWeight="SemiBold"/>
+                            <TextBox x:Name="PriceTextBox" Margin="0,2,0,5" Height="30"/>
+
+                            <TextBlock Text="Расстояние (км):" Margin="0,5,0,0" FontWeight="SemiBold"/>
+                            <TextBox x:Name="DistanceTextBox" Margin="0,2,0,5" Height="30"/>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,15,0,0" HorizontalAlignment="Center">
+                                <Button x:Name="SaveButton" Content="💾 Сохранить" Click="SaveButton_Click" 
+                                       Background="#27AE60" Foreground="White" Width="100" Height="35" Margin="5"/>
+                                <Button x:Name="DeleteButton" Content="🗑 Удалить" Click="DeleteButton_Click" 
+                                       Background="#E74C3C" Foreground="White" Width="100" Height="35" Margin="5"/>
+                                <Button x:Name="ClearButton" Content="🔄 Очистить" Click="ClearButton_Click" 
+                                       Width="100" Height="35" Margin="5"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Center" 
+                                  VerticalAlignment="Stretch" Background="#BDC3C7"/>
+
+                    <!-- Actions Panel -->
+                    <Border Grid.Column="2" BorderBrush="#BDC3C7" BorderThickness="1" CornerRadius="5" Padding="15">
+                        <StackPanel>
+                            <TextBlock Text="⚡ Действия" FontSize="16" FontWeight="Bold" 
+                                      Margin="0,0,0,15" Foreground="#2C3E50" HorizontalAlignment="Center"/>
+
+                            <Button x:Name="GenerateQRButton" Content="📱 Сгенерировать QR-код" 
+                                   Click="GenerateQRButton_Click" Margin="0,5" Height="45"
+                                   Background="#9B59B6" Foreground="White" FontSize="12"/>
+
+                            <Button x:Name="GeneratePDFButton" Content="📄 Сформировать PDF" 
+                                   Click="GeneratePDFButton_Click" Margin="0,5" Height="45"
+                                   Background="#E67E22" Foreground="White" FontSize="12"/>
+
+                            <Border Background="#F0F0F0" CornerRadius="5" Margin="0,20,0,0" Padding="10">
+                                <StackPanel>
+                                    <TextBlock Text="QR-код заказа" FontWeight="Bold" 
+                                              HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                                    <Image x:Name="QRCodeImage" Width="180" Height="180" 
+                                           Stretch="Uniform" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <!-- Status Bar -->
+        <StatusBar Grid.Row="2" Background="#ECF0F1">
+            <StatusBarItem>
+                <TextBlock x:Name="StatusText" Text="✅ Готов к работе" Margin="5"/>
+            </StatusBarItem>
+        </StatusBar>
+    </Grid>
+</Window>
