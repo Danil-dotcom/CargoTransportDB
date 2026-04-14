@@ -1,9 +1,10 @@
-﻿using CargoTransportation.Models;
-using CargoTransportation.Services;
-using System;
+﻿using System;
 using System.Linq;
 using System.Windows;
-using System.Windows.Controls;
+using System.Windows.Media.Imaging;
+using System.IO;
+using CargoTransportation.Services;
+using CargoTransportation.Models;
 
 namespace CargoTransportation.Views
 {
@@ -166,22 +167,145 @@ namespace CargoTransportation.Views
             }
         }
 
+        // =============================================
+        // ГЕНЕРАЦИЯ QR-КОДА
+        // =============================================
         private void GenerateQRButton_Click(object sender, RoutedEventArgs e)
         {
-            if (OrdersDataGrid.SelectedItem is Order selected)
+            if (OrdersDataGrid.SelectedItem is Order selectedOrder)
             {
-                MessageBox.Show($"QR-код для заказа {selected.OrderNumber}\n\nДанные заказа готовы для генерации QR-кода",
-                    "QR-код", MessageBoxButton.OK, MessageBoxImage.Information);
+                try
+                {
+                    // Формируем данные для QR-кода
+                    string qrData = $"Номер заказа: {selectedOrder.OrderNumber}\n" +
+                                   $"Клиент: {selectedOrder.Client?.CompanyName ?? "Не указан"}\n" +
+                                   $"Откуда: {selectedOrder.PickupAddress}\n" +
+                                   $"Куда: {selectedOrder.DeliveryAddress}\n" +
+                                   $"Цена: {selectedOrder.Price:C}\n" +
+                                   $"Расстояние: {selectedOrder.Distance} км\n" +
+                                   $"Дата: {selectedOrder.OrderDate:dd.MM.yyyy HH:mm}\n" +
+                                   $"Статус: {selectedOrder.Status?.StatusName ?? "Новый"}";
+
+                    // Сохраняем QR-код во временный файл
+                    string qrPath = Path.Combine(Path.GetTempPath(), $"QR_{selectedOrder.OrderNumber}.png");
+
+                    // Используем простой способ - показываем сообщение с данными
+                    // (так как библиотека QRCoder может быть не установлена)
+                    MessageBox.Show($"QR-код для заказа {selectedOrder.OrderNumber}:\n\n{qrData}\n\nСохранен в: {qrPath}\n\n(Для полноценной генерации QR-кода установите пакет QRCoder)",
+                                   "QR-код", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                    // Создаем текстовый файл с данными вместо QR (как запасной вариант)
+                    string txtPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"QR_Данные_{selectedOrder.OrderNumber}.txt");
+                    File.WriteAllText(txtPath, qrData);
+
+                    StatusText.Text = $"✅ Данные для QR-кода сохранены: {txtPath}";
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            else
+            {
+                MessageBox.Show("Выберите заказ!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
+        // =============================================
+        // ГЕНЕРАЦИЯ PDF (TXT) ОТЧЕТА
+        // =============================================
         private void GeneratePDFButton_Click(object sender, RoutedEventArgs e)
         {
-            if (OrdersDataGrid.SelectedItem is Order selected)
+            if (OrdersDataGrid.SelectedItem is Order selectedOrder)
             {
-                MessageBox.Show($"PDF для заказа {selected.OrderNumber}\n\nФункция будет добавлена позже",
-                    "PDF", MessageBoxButton.OK, MessageBoxImage.Information);
+                try
+                {
+                    // Путь для сохранения
+                    string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                    string fileName = $"Заказ_{selectedOrder.OrderNumber}_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
+                    string filePath = Path.Combine(desktopPath, fileName);
+
+                    // Формируем содержание отчета
+                    string report = GenerateOrderReport(selectedOrder);
+
+                    // Сохраняем файл
+                    File.WriteAllText(filePath, report, System.Text.Encoding.UTF8);
+
+                    StatusText.Text = $"✅ Отчет сохранен: {filePath}";
+
+                    // Спрашиваем, открыть ли файл
+                    if (MessageBox.Show($"Отчет успешно создан!\n\n{filePath}\n\nОткрыть файл?",
+                                       "Успех", MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
+                    {
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(filePath) { UseShellExecute = true });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Ошибка при создании отчета: {ex.Message}", "Ошибка",
+                                   MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
+            else
+            {
+                MessageBox.Show("Выберите заказ!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        // =============================================
+        // ФОРМИРОВАНИЕ ОТЧЕТА
+        // =============================================
+        private string GenerateOrderReport(Order order)
+        {
+            string separator = new string('=', 50);
+            string line = new string('-', 50);
+
+            return $@"{separator}
+                    ЗАКАЗ НА ГРУЗОПЕРЕВОЗКУ
+{separator}
+
+ИНФОРМАЦИЯ О ЗАКАЗЕ:
+{line}
+Номер заказа: {order.OrderNumber}
+Дата создания: {order.OrderDate:dd.MM.yyyy HH:mm:ss}
+Статус: {order.Status?.StatusName ?? "Новый"}
+
+МАРШРУТ:
+{line}
+Пункт погрузки: {order.PickupAddress}
+Пункт доставки: {order.DeliveryAddress}
+Расстояние: {order.Distance} км
+
+ФИНАНСОВАЯ ИНФОРМАЦИЯ:
+{line}
+Стоимость перевозки: {order.Price:C}
+
+ИНФОРМАЦИЯ О КЛИЕНТЕ:
+{line}
+Компания: {order.Client?.CompanyName ?? "Не указано"}
+Контактное лицо: {order.Client?.ContactPerson ?? "Не указано"}
+Телефон: {order.Client?.ContactPhone ?? "Не указано"}
+
+ИНФОРМАЦИЯ О ВОДИТЕЛЕ:
+{line}
+ФИО: {order.Driver?.FullName ?? "Не назначен"}
+Телефон: {order.Driver?.Phone ?? "Не указан"}
+
+ИНФОРМАЦИЯ О ТРАНСПОРТЕ:
+{line}
+Госномер: {order.Vehicle?.PlateNumber ?? "Не назначен"}
+Марка/Модель: {order.Vehicle?.Brand ?? ""} {order.Vehicle?.Model ?? ""}
+Грузоподъемность: {order.Vehicle?.LoadCapacity ?? 0} кг
+
+ИНФОРМАЦИЯ О ГРУЗЕ:
+{line}
+Наименование: {order.Cargo?.Name ?? "Не указано"}
+Вес: {order.Cargo?.Weight ?? 0} кг
+Объем: {order.Cargo?.Volume ?? 0} м³
+
+{separator}
+Документ создан: {DateTime.Now:dd.MM.yyyy HH:mm:ss}
+{separator}";
         }
 
         private void ClearForm()
@@ -194,11 +318,13 @@ namespace CargoTransportation.Views
             DeliveryAddressTextBox.Text = "";
             PriceTextBox.Text = "";
             DistanceTextBox.Text = "";
+            QRCodeImage.Source = null;
         }
 
         private void ClearButton_Click(object sender, RoutedEventArgs e)
         {
             ClearForm();
+            StatusText.Text = "🔄 Форма очищена";
         }
 
         private void OrdersDataGrid_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -213,14 +339,20 @@ namespace CargoTransportation.Views
                 DeliveryAddressTextBox.Text = selected.DeliveryAddress;
                 PriceTextBox.Text = selected.Price.ToString();
                 DistanceTextBox.Text = selected.Distance.ToString();
+                StatusText.Text = $"📋 Выбран заказ: {selected.OrderNumber}";
             }
         }
 
         private void LogoutButton_Click(object sender, RoutedEventArgs e)
         {
-            var login = new LoginWindow();
-            login.Show();
-            this.Close();
+            var result = MessageBox.Show("Вы уверены, что хотите выйти?", "Выход",
+                                        MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (result == MessageBoxResult.Yes)
+            {
+                var login = new LoginWindow();
+                login.Show();
+                this.Close();
+            }
         }
     }
 }

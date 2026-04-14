@@ -4,7 +4,7 @@
         Title="Система управления грузоперевозками" Height="650" Width="1100"
         WindowStartupLocation="CenterScreen">
 
-    <Grid>
+    <Grid Margin="0,0,0,-29">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -168,7 +168,7 @@
 
         <!-- Status Bar -->
         <StatusBar Grid.Row="2" Background="#ECF0F1">
-            <StatusBarItem>
+            <StatusBarItem Margin="0,0,0,3">
                 <TextBlock x:Name="StatusText" Text="✅ Готов к работе" Margin="5"/>
             </StatusBarItem>
         </StatusBar>

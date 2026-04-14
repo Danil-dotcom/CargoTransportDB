@@ -1,7 +1,7 @@
-﻿using System;
-using System.Text.RegularExpressions;
+﻿using CargoTransportation.Services;
+using System;
+using System.Linq;
 using System.Windows;
-using CargoTransportation.Services;
 
 namespace CargoTransportation.Views
 {
@@ -15,53 +15,26 @@ namespace CargoTransportation.Views
             _authService = new AuthService();
         }
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
-        {
-            UsernameTextBox.Focus();
-        }
-
         private void LoginButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                // Ограничения и проверки
-                if (string.IsNullOrWhiteSpace(UsernameTextBox.Text))
+                string username = UsernameTextBox.Text?.Trim();
+                string password = PasswordBox.Password;
+
+                if (string.IsNullOrWhiteSpace(username))
                 {
                     ShowError("Введите логин!");
                     return;
                 }
 
-                if (UsernameTextBox.Text.Length < 3)
-                {
-                    ShowError("Логин должен содержать минимум 3 символа!");
-                    return;
-                }
-
-                if (UsernameTextBox.Text.Length > 50)
-                {
-                    ShowError("Логин не должен превышать 50 символов!");
-                    return;
-                }
-
-                if (string.IsNullOrWhiteSpace(PasswordBox.Password))
+                if (string.IsNullOrWhiteSpace(password))
                 {
                     ShowError("Введите пароль!");
                     return;
                 }
 
-                if (PasswordBox.Password.Length < 6)
-                {
-                    ShowError("Пароль должен содержать минимум 6 символов!");
-                    return;
-                }
-
-                if (PasswordBox.Password.Length > 100)
-                {
-                    ShowError("Пароль не должен превышать 100 символов!");
-                    return;
-                }
-
-                var user = _authService.Login(UsernameTextBox.Text.Trim(), PasswordBox.Password);
+                var user = _authService.Login(username, password);
 
                 if (user != null)
                 {
@@ -71,12 +44,12 @@ namespace CargoTransportation.Views
                 }
                 else
                 {
-                    ShowError("Неверное имя пользователя или пароль!");
+                    ShowError("Неверный логин или пароль!");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка входа: {ex.Message}", "Ошибка",
+                MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка",
                                MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -88,24 +61,59 @@ namespace CargoTransportation.Views
             registerWindow.ShowDialog();
         }
 
-        private void UsernameTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        private void DebugBtn_Click(object sender, RoutedEventArgs e)
         {
-            CheckFields();
-        }
+            try
+            {
+                using (var context = new Data.CargoDbContext())
+                {
+                    var admin = context.Users.FirstOrDefault(u => u.Username == "admin");
+                    var auth = new AuthService();
+                    string testHash = auth.HashPassword("admin");
 
-        private void PasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
-        {
-            CheckFields();
-        }
+                    string message = "";
+                    message += "=== ОТЛАДКА АВТОРИЗАЦИИ ===\n\n";
 
-        private void CheckFields()
-        {
-            bool isValid = !string.IsNullOrWhiteSpace(UsernameTextBox.Text) &&
-                          !string.IsNullOrWhiteSpace(PasswordBox.Password) &&
-                          UsernameTextBox.Text.Length >= 3 &&
-                          PasswordBox.Password.Length >= 6;
+                    if (admin == null)
+                    {
+                        message += "❌ Пользователь 'admin' не найден в базе данных!\n\n";
+                        message += "Выполните SQL запрос:\n";
+                        message += "INSERT INTO Users (Username, Email, PasswordHash, Phone, RoleID, RegistrationDate, IsActive)\n";
+                        message += "VALUES ('admin', 'admin@cargo.com', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', '+7(999)000-00-00', 1, GETDATE(), 1);\n";
+                    }
+                    else
+                    {
+                        message += $"✅ Пользователь найден: {admin.Username}\n";
+                        message += $"📧 Email: {admin.Email}\n";
+                        message += $"🔐 Хэш в БД: {admin.PasswordHash}\n";
+                        message += $"📏 Длина хэша в БД: {admin.PasswordHash?.Length ?? 0} символов\n\n";
+                        message += $"🔧 Хэш для 'admin': {testHash}\n";
+                        message += $"📏 Длина хэша: {testHash.Length} символов\n\n";
 
-            LoginButton.IsEnabled = isValid;
+                        bool isValid = auth.VerifyPassword("admin", admin.PasswordHash);
+                        message += $"🔍 Результат проверки пароля: {(isValid ? "✅ ВЕРНЫЙ" : "❌ НЕВЕРНЫЙ")}\n\n";
+
+                        if (!isValid)
+                        {
+                            message += "⚠️ Хэши не совпадают!\n";
+                            message += "Возможные причины:\n";
+                            message += "1. Разные методы хэширования\n";
+                            message += "2. Разная кодировка (UTF-8 vs ASCII)\n";
+                            message += "3. Лишние пробелы или символы\n\n";
+                            message += "Рекомендация: Обновите хэш в БД:\n";
+                            message += $"UPDATE Users SET PasswordHash = '{testHash}' WHERE Username = 'admin';\n";
+                        }
+                    }
+
+                    MessageBox.Show(message, "Диагностика", MessageBoxButton.OK,
+                                   admin == null ? MessageBoxImage.Warning : MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка диагностики:\n{ex.Message}", "Ошибка",
+                               MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void ShowError(string message)
@@ -113,7 +121,6 @@ namespace CargoTransportation.Views
             ErrorTextBlock.Text = $"❌ {message}";
             ErrorTextBlock.Visibility = Visibility.Visible;
 
-            // Скрыть ошибку через 3 секунды
             var timer = new System.Windows.Threading.DispatcherTimer();
             timer.Interval = TimeSpan.FromSeconds(3);
             timer.Tick += (s, args) =>
