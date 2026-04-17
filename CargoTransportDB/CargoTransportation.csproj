@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\packages\EntityFramework.6.5.1\build\EntityFramework.props" Condition="Exists('..\packages\EntityFramework.6.5.1\build\EntityFramework.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
@@ -37,7 +37,13 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>fast-delivery.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
+    <Reference Include="BouncyCastle.Crypto, Version=1.8.9.0, Culture=neutral, PublicKeyToken=0e99375e54769942">
+      <HintPath>..\packages\BouncyCastle.1.8.9\lib\BouncyCastle.Crypto.dll</HintPath>
+    </Reference>
     <Reference Include="BouncyCastle.Cryptography, Version=2.0.0.0, Culture=neutral, PublicKeyToken=072edcf4a5328938, processorArchitecture=MSIL">
       <HintPath>..\packages\BouncyCastle.Cryptography.2.6.2\lib\net461\BouncyCastle.Cryptography.dll</HintPath>
     </Reference>
@@ -47,8 +53,8 @@
     <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <HintPath>..\packages\EntityFramework.6.5.1\lib\net45\EntityFramework.SqlServer.dll</HintPath>
     </Reference>
-    <Reference Include="iTextSharp.LGPLv2.Core, Version=3.7.12.0, Culture=neutral, PublicKeyToken=51d712e21b66ad36, processorArchitecture=MSIL">
-      <HintPath>..\packages\iTextSharp.LGPLv2.Core.3.7.12\lib\net462\iTextSharp.LGPLv2.Core.dll</HintPath>
+    <Reference Include="itextsharp, Version=5.5.13.3, Culture=neutral, PublicKeyToken=8354ae6d2174ddca, processorArchitecture=MSIL">
+      <HintPath>..\packages\iTextSharp.5.5.13.3\lib\itextsharp.dll</HintPath>
     </Reference>
     <Reference Include="QRCoder, Version=1.8.0.0, Culture=neutral, PublicKeyToken=c4ed5b9ae8358a28, processorArchitecture=MSIL">
       <HintPath>..\packages\QRCoder.1.8.0\lib\net40\QRCoder.dll</HintPath>
@@ -62,8 +68,8 @@
     </Reference>
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Data" />
-    <Reference Include="System.Drawing.Common, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Drawing.Common.6.0.0\lib\net461\System.Drawing.Common.dll</HintPath>
+    <Reference Include="System.Drawing.Common, Version=7.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Drawing.Common.7.0.0\lib\net462\System.Drawing.Common.dll</HintPath>
     </Reference>
     <Reference Include="System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Memory.4.5.5\lib\net461\System.Memory.dll</HintPath>
@@ -93,15 +99,50 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Helpers\ImageHelper.cs" />
+    <Compile Include="Helpers\ImagePathConverter.cs" />
+    <Compile Include="Helpers\PDFHelper.cs" />
+    <Compile Include="Helpers\StatusColorConverter.cs" />
+    <Compile Include="Helpers\StatusEnabledConverter.cs" />
     <Compile Include="Models\Review.cs" />
     <Compile Include="Services\AuthService.cs" />
     <Compile Include="Services\OrderService.cs" />
+    <Compile Include="Views\ClientOrdersWindow.xaml.cs">
+      <DependentUpon>ClientOrdersWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\ClientOrderWindow.xaml.cs">
+      <DependentUpon>ClientOrderWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\ClientWindow.xaml.cs">
+      <DependentUpon>ClientWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\LoginWindow.xaml.cs">
       <DependentUpon>LoginWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\OrderDetailsWindow.xaml.cs">
+      <DependentUpon>OrderDetailsWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\RegisterWindow.xaml.cs">
       <DependentUpon>RegisterWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\TruckCatalogWindow.xaml.cs">
+      <DependentUpon>TruckCatalogWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\VehicleSelectionWindow.xaml.cs">
+      <DependentUpon>VehicleSelectionWindow.xaml</DependentUpon>
+    </Compile>
+    <Page Include="Views\ClientOrdersWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\ClientOrderWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\ClientWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\LoginWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -120,7 +161,19 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Views\OrderDetailsWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\RegisterWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\TruckCatalogWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\VehicleSelectionWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -166,7 +219,19 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="fast-delivery.ico" />
+  </ItemGroup>
   <ItemGroup />
+  <ItemGroup>
+    <Resource Include="Images\truck2.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\truck1.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\no_image.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

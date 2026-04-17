@@ -1,9 +1,9 @@
-﻿using CargoTransportation.Data;
-using CargoTransportation.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Data.Entity;
 using System.Linq;
+using System.Data.Entity;
+using CargoTransportation.Data;
+using CargoTransportation.Models;
 
 namespace CargoTransportation.Services
 {
@@ -36,6 +36,28 @@ namespace CargoTransportation.Services
             }
         }
 
+        // НОВЫЙ МЕТОД: Получение заказов по клиенту
+        public List<Order> GetOrdersByClient(int clientId)
+        {
+            try
+            {
+                return _context.Orders
+                    .Include(x => x.Client)
+                    .Include(x => x.Driver)
+                    .Include(x => x.Vehicle)
+                    .Include(x => x.Cargo)
+                    .Include(x => x.Status)
+                    .Where(x => x.ClientID == clientId)
+                    .OrderByDescending(x => x.OrderDate)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetOrdersByClient Error: {ex.Message}");
+                return new List<Order>();
+            }
+        }
+
         public bool AddOrder(Order order)
         {
             try
@@ -50,6 +72,35 @@ namespace CargoTransportation.Services
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"AddOrder Error: {ex.Message}");
+                return false;
+            }
+        }
+
+        public bool UpdateOrder(Order order)
+        {
+            try
+            {
+                var existingOrder = _context.Orders.Find(order.OrderID);
+                if (existingOrder != null)
+                {
+                    existingOrder.ClientID = order.ClientID;
+                    existingOrder.DriverID = order.DriverID;
+                    existingOrder.VehicleID = order.VehicleID;
+                    existingOrder.CargoID = order.CargoID;
+                    existingOrder.PickupAddress = order.PickupAddress;
+                    existingOrder.DeliveryAddress = order.DeliveryAddress;
+                    existingOrder.Price = order.Price;
+                    existingOrder.Distance = order.Distance;
+                    existingOrder.StatusID = order.StatusID;
+
+                    _context.SaveChanges();
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"UpdateOrder Error: {ex.Message}");
                 return false;
             }
         }

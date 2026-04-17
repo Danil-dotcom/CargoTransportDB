@@ -1,5 +1,4 @@
-﻿// Models/Order.cs
-using System;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -13,7 +12,6 @@ namespace CargoTransportation.Models
 
         [Required]
         [MaxLength(50)]
-        [Index("IX_OrderNumber", IsUnique = true)]
         public string OrderNumber { get; set; }
 
         public int ClientID { get; set; }

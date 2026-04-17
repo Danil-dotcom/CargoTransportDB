@@ -24,6 +24,14 @@ namespace CargoTransportation.Models
         public decimal LoadCapacity { get; set; }
 
         [MaxLength(50)]
-        public string Status { get; set; } = "Available";
+        public string Status { get; set; }
+
+        [MaxLength(500)]
+        public string ImagePath { get; set; }
+
+        public Vehicle()
+        {
+            Status = "Available";
+        }
     }
 }
